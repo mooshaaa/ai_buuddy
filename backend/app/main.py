@@ -1,10 +1,13 @@
+import logging
 from contextlib import asynccontextmanager
+from datetime import datetime
 
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 
-from . import agent, tools
+from . import agent, debuglog, tools
+from .config import settings
 from .db import get_db, init_db
 from .llm import describe_provider, get_provider
 from .models import Action, Stage, StageProgress, User
@@ -19,6 +22,9 @@ async def lifespan(_: FastAPI):
     yield
 
 
+logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
+log = logging.getLogger("ai_buddy.chat")
+
 app = FastAPI(title="AI-buddy", lifespan=lifespan)
 app.add_middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
 
@@ -32,7 +38,7 @@ def _user(db: Session, user_id: str) -> User:
 
 @app.get("/health")
 def health():
-    return {"status": "ok", "llm": describe_provider()}
+    return {"status": "ok", "llm": describe_provider(), "debug": settings.debug}
 
 
 @app.get("/api/users", response_model=list[UserOut])
@@ -43,7 +49,22 @@ def users(db: Session = Depends(get_db)):
 @app.post("/api/chat", response_model=ChatResponse)
 def chat(body: ChatRequest, db: Session = Depends(get_db)):
     user = _user(db, body.user_id)
-    return ChatResponse(blocks=agent.handle_message(db, user, body.message, get_provider()))
+    trace: dict = {}
+    blocks = agent.handle_message(db, user, body.message, get_provider(), trace)
+    log.info("chat user=%s intent=%s source=%s model=%s ms=%s note=%s%s",
+             user.id, trace.get("intent"), trace.get("source"), trace.get("model") or "-",
+             trace.get("latency_ms"), trace.get("note") or "-",
+             f" msg={body.message[:80]!r}" if settings.debug else "")
+    debuglog.record({"ts": datetime.now().isoformat(timespec="seconds"), "user": user.id,
+                     "message": body.message[:200], **trace})
+    return ChatResponse(blocks=blocks, debug=trace if settings.debug else None)
+
+
+@app.get("/api/debug/events")
+def debug_events(limit: int = 50):
+    if not settings.debug:
+        raise HTTPException(404, "Отладка выключена (DEBUG=0)")
+    return debuglog.recent(limit)
 
 
 @app.get("/api/stages", response_model=StagesResponse)

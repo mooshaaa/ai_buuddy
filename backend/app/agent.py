@@ -1,4 +1,6 @@
 """Оркестратор: провайдер понимает запрос, агент проверяет права и вызывает инструменты."""
+import time
+
 from sqlalchemy.orm import Session
 
 from . import tools
@@ -42,11 +44,20 @@ def stage_summary(db: Session, user: User) -> str:
     return f"Выполнено {done} из {total}. Следующий шаг: «{nxt.title}» ({nxt.period}). {nxt.description}"
 
 
-def handle_message(db: Session, user: User, message: str, provider: LLMProvider) -> list[Block]:
+def handle_message(
+    db: Session, user: User, message: str, provider: LLMProvider, trace: dict | None = None
+) -> list[Block]:
+    start = time.perf_counter()
     try:
         intent = provider.parse(user, message)
-    except Exception:
+    except Exception as e:
+        if trace is not None:
+            trace.update(intent="error", source="error", model="", note=str(e)[:200],
+                         latency_ms=round((time.perf_counter() - start) * 1000))
         return [ErrorBlock(text="Не получилось обработать запрос. Попробуй ещё раз или переформулируй.")]
+    if trace is not None:
+        trace.update(intent=intent.name, source=intent.source, model=intent.model, note=intent.note,
+                     latency_ms=round((time.perf_counter() - start) * 1000))
 
     if intent.name == "create_absence":
         if not is_allowed(user.role, "create_absence"):

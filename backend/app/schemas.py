@@ -34,6 +34,7 @@ class ChatRequest(BaseModel):
 
 class ChatResponse(BaseModel):
     blocks: list[Block]
+    debug: Optional[dict] = None  # заполняется только при DEBUG=1
 
 
 class UserOut(BaseModel):

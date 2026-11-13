@@ -11,7 +11,7 @@ def chat(client, user_id, message):
 
 def test_health(client):
     data = client.get("/health").json()
-    assert data["status"] == "ok" and data["llm"] == "stub"
+    assert data["status"] == "ok" and data["llm"] == "stub" and data["debug"] is False
 
 
 def test_users(client):

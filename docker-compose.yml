@@ -22,6 +22,7 @@ services:
       LLM_MODEL: ${LLM_MODEL:-}
       LLM_FALLBACK_MODEL: ${LLM_FALLBACK_MODEL:-}
       LLM_API_KEY: ${LLM_API_KEY:-}
+      DEBUG: ${DEBUG:-0}
     ports:
       - "8000:8000"
     depends_on:

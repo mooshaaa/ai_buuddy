@@ -11,6 +11,9 @@ class Intent:
     name: str  # create_absence | show_stages | team_progress | faq | unknown
     params: dict = field(default_factory=dict)
     text: str = ""
+    source: str = "stub"  # stub | llm
+    model: str = ""
+    note: str = ""  # причина отката на заглушку
 
 
 class LLMProvider(Protocol):

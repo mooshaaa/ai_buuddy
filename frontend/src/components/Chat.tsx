@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { api } from '../api'
 import type { Message, User } from '../types'
 import Blocks from './Blocks'
+import DebugLine from './DebugLine'
 
 const SUGGESTIONS: Record<User['role'], string[]> = {
   intern: ['Хочу отгул 20 ноября', 'Что мне делать дальше?', 'Как получить доступы?', 'Покажи прогресс стажёра'],
@@ -26,8 +27,8 @@ export default function Chat({ user, onChange }: { user: User; onChange: () => v
     setMessages((m) => [...m, { id: nextId.current++, from: 'user', blocks: [{ type: 'text', text: message }] }])
     setBusy(true)
     try {
-      const blocks = await api.chat(user.id, message)
-      setMessages((m) => [...m, { id: nextId.current++, from: 'bot', blocks }])
+      const { blocks, debug } = await api.chat(user.id, message)
+      setMessages((m) => [...m, { id: nextId.current++, from: 'bot', blocks, debug }])
     } catch {
       setMessages((m) => [
         ...m,
@@ -67,6 +68,7 @@ export default function Chat({ user, onChange }: { user: User; onChange: () => v
                 onChange()
               }}
             />
+            {m.debug && <DebugLine info={m.debug} />}
           </div>
         ))}
         {busy && <div className="msg msg-bot"><p className="bubble typing" aria-live="polite">Думаю…</p></div>}

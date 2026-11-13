@@ -69,7 +69,8 @@ def test_fallback_model_on_rate_limit():
         return httpx.Response(429, json={}) if model == "main" else reply(ABSENCE)
 
     p = make(handler, fallback_model="backup")
-    assert p.parse(USER, "отгул 20 ноября").name == "create_absence"
+    intent = p.parse(USER, "отгул 20 ноября")
+    assert intent.name == "create_absence" and intent.source == "llm" and intent.model == "backup"
     assert models == ["main", "backup"]
 
 
@@ -123,7 +124,8 @@ def test_fallback_provider_uses_stub_on_failure():
         def parse(self, user, message):
             raise RuntimeError("down")
 
-    assert FallbackProvider(Broken(), StubProvider()).parse(USER, "Что мне делать дальше?").name == "show_stages"
+    fb = FallbackProvider(Broken(), StubProvider()).parse(USER, "Что мне делать дальше?")
+    assert fb.name == "show_stages" and fb.source == "stub" and "down" in fb.note
     ok = Intent("faq", text="x")
 
     class Good:

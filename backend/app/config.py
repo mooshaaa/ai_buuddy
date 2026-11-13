@@ -12,6 +12,8 @@ class Settings:
     llm_fallback_model: str = os.getenv("LLM_FALLBACK_MODEL", "")
     llm_api_key: str = os.getenv("LLM_API_KEY", "")
     llm_timeout: float = float(os.getenv("LLM_TIMEOUT", "15"))
+    # DEBUG=1: показывать отладку в ответах API и открыть /api/debug/events (только для разработки)
+    debug: bool = os.getenv("DEBUG", "0").lower() in ("1", "true", "yes")
 
 
 settings = Settings()

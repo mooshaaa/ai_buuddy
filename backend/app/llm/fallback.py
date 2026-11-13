@@ -18,4 +18,6 @@ class FallbackProvider:
             return self.primary.parse(user, message)
         except Exception as e:  # noqa: BLE001
             log.warning("LLM недоступна, используем заглушку: %s", e)
-            return self.backup.parse(user, message)
+            intent = self.backup.parse(user, message)
+            intent.note = f"{type(e).__name__}: {e}"[:200]
+            return intent

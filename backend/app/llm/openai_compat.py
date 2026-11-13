@@ -93,7 +93,9 @@ class OpenAICompatProvider:
         for model in self.models:
             for _attempt in range(2):  # один повтор при невалидном ответе
                 try:
-                    return self._to_intent(self._ask(model, message), message)
+                    intent = self._to_intent(self._ask(model, message), message)
+                    intent.source, intent.model = "llm", model
+                    return intent
                 except httpx.HTTPError as e:  # сеть, 429, 5xx: сразу к запасной модели
                     last = e
                     break

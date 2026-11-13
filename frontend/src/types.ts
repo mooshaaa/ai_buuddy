@@ -19,10 +19,31 @@ export interface ActionCardBlock {
 }
 export type Block = TextBlock | ErrorBlock | ActionCardBlock
 
+export interface DebugInfo {
+  intent: string
+  source: 'llm' | 'stub' | 'error'
+  model: string
+  note: string
+  latency_ms: number
+}
+
+export interface DebugEvent extends DebugInfo {
+  ts: string
+  user: string
+  message: string
+}
+
+export interface Health {
+  status: string
+  llm: string
+  debug: boolean
+}
+
 export interface Message {
   id: number
   from: 'user' | 'bot'
   blocks: Block[]
+  debug?: DebugInfo | null
 }
 
 export interface Stage {
