@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 
 from . import agent, tools
 from .db import get_db, init_db
-from .llm import get_provider
+from .llm import describe_provider, get_provider
 from .models import Action, Stage, StageProgress, User
 from .policy import PermissionDenied
 from .schemas import (ActionCardBlock, ChatRequest, ChatResponse, StageOut,
@@ -32,7 +32,7 @@ def _user(db: Session, user_id: str) -> User:
 
 @app.get("/health")
 def health():
-    return {"status": "ok"}
+    return {"status": "ok", "llm": describe_provider()}
 
 
 @app.get("/api/users", response_model=list[UserOut])

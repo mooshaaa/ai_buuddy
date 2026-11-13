@@ -30,3 +30,11 @@ def get_provider() -> LLMProvider:
             StubProvider(),
         )
     raise RuntimeError(f"Неизвестный LLM_PROVIDER: {settings.llm_provider}")
+
+
+def describe_provider() -> str:
+    """Короткое описание режима для /health: помогает понять, работает модель или заглушка."""
+    provider = get_provider()
+    if isinstance(provider, StubProvider):
+        return "stub"
+    return f"openai_compat:{settings.llm_model}"

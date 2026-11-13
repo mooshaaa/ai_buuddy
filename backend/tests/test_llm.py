@@ -150,3 +150,20 @@ def test_get_provider_variants(monkeypatch):
     assert isinstance(full, FallbackProvider)
     with pytest.raises(RuntimeError):
         _with_settings(monkeypatch, llm_provider="nope")
+
+
+def test_prompt_contains_weekday_calendar():
+    seen = {}
+
+    def handler(request):
+        seen["system"] = json.loads(request.content)["messages"][0]["content"]
+        return reply('{"intent": "unknown", "params": {}}')
+
+    make(handler).parse(USER, "привет")
+    assert "2026-11-11 (среда)" in seen["system"]
+    assert "2026-11-16 понедельник" in seen["system"]
+
+
+def test_weekday_recovered_when_model_gives_no_date():
+    p = make(lambda r: reply('{"intent": "create_absence", "params": {"date": null}}'))
+    assert p.parse(USER, "Мне нужен выходной в понедельник").params["date"] == "2026-11-16"

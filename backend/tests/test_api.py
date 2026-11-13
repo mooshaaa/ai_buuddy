@@ -10,7 +10,8 @@ def chat(client, user_id, message):
 
 
 def test_health(client):
-    assert client.get("/health").json() == {"status": "ok"}
+    data = client.get("/health").json()
+    assert data["status"] == "ok" and data["llm"] == "stub"
 
 
 def test_users(client):
@@ -85,3 +86,9 @@ def test_parse_date():
     assert parse_date("завтра", today) == date(2026, 11, 11)
     assert parse_date("15.12", today) == date(2026, 12, 15)
     assert parse_date("когда-нибудь", today) is None
+    # 2026-11-10 это вторник
+    assert parse_date("в понедельник", today) == date(2026, 11, 16)
+    assert parse_date("нужен выходной в среду", today) == date(2026, 11, 11)
+    assert parse_date("во вторник", today) == date(2026, 11, 17)
+    assert parse_date("в следующую пятницу", today) == date(2026, 11, 13)
+    assert parse_date("в воскресенье", today) == date(2026, 11, 15)

@@ -7,6 +7,7 @@ from ..models import User
 from .base import Intent
 
 MONTH_STEMS = ["январ", "феврал", "март", "апрел", "ма", "июн", "июл", "август", "сентябр", "октябр", "ноябр", "декабр"]
+WEEKDAY_STEMS = ["понедельник", "вторник", "сред", "четверг", "пятниц", "суббот", "воскресень"]
 MONTH_IDX = {1: 0, 2: 1, 3: 2, 4: 3, 5: 4, 6: 5, 7: 6, 8: 7, 9: 8, 10: 9, 11: 10, 12: 11}
 
 
@@ -26,6 +27,10 @@ def parse_date(text: str, today: date | None = None) -> date | None:
     m = re.search(r"(\d{1,2})\.(\d{1,2})", low)
     if m:
         return _build(today, int(m.group(2)), int(m.group(1)))
+    m = re.search(r"\b(?:в|во|на)\s+(?:эту\s+|следующ\w+\s+)?(понедельник|вторник|сред\w|четверг|пятниц\w|суббот\w|воскресень\w)", low)
+    if m:
+        target = next(i for i, stem in enumerate(WEEKDAY_STEMS) if m.group(1).startswith(stem))
+        return today + timedelta(days=(target - today.weekday() - 1) % 7 + 1)
     return None
 
 
