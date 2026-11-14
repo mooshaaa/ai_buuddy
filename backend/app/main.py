@@ -6,13 +6,13 @@ from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 
-from . import agent, debuglog, tools
+from . import agent, debuglog, history, tools
 from .config import settings
 from .db import get_db, init_db
 from .llm import describe_provider, get_provider
 from .models import Action, Stage, StageProgress, User
 from .policy import PermissionDenied
-from .schemas import (ActionCardBlock, ChatRequest, ChatResponse, StageOut,
+from .schemas import (ActionCardBlock, ChatRequest, ChatResponse, HistoryResponse, StageOut,
                       StagesResponse, UserBody, UserOut)
 
 
@@ -50,14 +50,40 @@ def users(db: Session = Depends(get_db)):
 def chat(body: ChatRequest, db: Session = Depends(get_db)):
     user = _user(db, body.user_id)
     trace: dict = {}
-    blocks = agent.handle_message(db, user, body.message, get_provider(), trace)
-    log.info("chat user=%s intent=%s source=%s model=%s ms=%s note=%s kb=%s%s",
+    turns = history.load(db, user.id)
+    blocks = agent.handle_message(db, user, body.message, get_provider(), trace, turns)
+    history.save_turn(db, user.id, body.message, [b.model_dump() for b in blocks])
+    log.info("chat user=%s intent=%s source=%s model=%s ms=%s note=%s kb=%s hist=%s%s",
              user.id, trace.get("intent"), trace.get("source"), trace.get("model") or "-",
-             trace.get("latency_ms"), trace.get("note") or "-", trace.get("kb_sources") or "-",
+             trace.get("latency_ms"), trace.get("note") or "-", trace.get("kb_sources") or "-", trace.get("history_len"),
              f" msg={body.message[:80]!r}" if settings.debug else "")
     debuglog.record({"ts": datetime.now().isoformat(timespec="seconds"), "user": user.id,
                      "message": body.message[:200], **trace})
     return ChatResponse(blocks=blocks, debug=trace if settings.debug else None)
+
+
+def _refresh_block(db: Session, block: dict) -> dict:
+    """Карточки действий в сохранённой истории показываем с актуальным статусом."""
+    if block.get("type") == "action_card":
+        action = db.get(Action, block["action_id"])
+        if action:
+            return agent.to_card(action).model_dump()
+    return block
+
+
+@app.get("/api/history", response_model=HistoryResponse)
+def get_history(user_id: str, db: Session = Depends(get_db)):
+    user = _user(db, user_id)
+    items = history.restore(db, user.id)
+    for item in items:
+        item["blocks"] = [_refresh_block(db, b) for b in item["blocks"]]
+    return HistoryResponse(messages=items)
+
+
+@app.post("/api/history/reset")
+def reset_history(body: UserBody, db: Session = Depends(get_db)):
+    user = _user(db, body.user_id)
+    return {"status": "ok", "archived": history.reset(db, user.id)}
 
 
 @app.get("/api/debug/events")

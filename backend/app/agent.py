@@ -52,18 +52,22 @@ def stage_summary(db: Session, user: User) -> str:
 
 
 def handle_message(
-    db: Session, user: User, message: str, provider: LLMProvider, trace: dict | None = None
+    db: Session, user: User, message: str, provider: LLMProvider, trace: dict | None = None,
+    history: list[dict] | None = None,
 ) -> list[Block]:
     trace = trace if trace is not None else {}
+    trace["history_len"] = len(history or [])
     start = time.perf_counter()
-    blocks = _dispatch(db, user, message, provider, trace)
+    blocks = _dispatch(db, user, message, provider, trace, history)
     trace["latency_ms"] = round((time.perf_counter() - start) * 1000)
     return blocks
 
 
-def _answer_from_kb(user: User, message: str, provider: LLMProvider, trace: dict) -> list[Block]:
+def _answer_from_kb(
+    user: User, message: str, provider: LLMProvider, trace: dict, history: list[dict] | None
+) -> list[Block]:
     try:
-        result = provider.answer(user, message, kb.for_role(user.role))
+        result = provider.answer(user, message, kb.for_role(user.role), history)
     except Exception as e:  # noqa: BLE001
         trace.update(kb_found=False, note=str(e)[:200])
         return [ErrorBlock(text="Не получилось найти ответ. Попробуй ещё раз или переформулируй вопрос.")]
@@ -81,9 +85,11 @@ def _answer_from_kb(user: User, message: str, provider: LLMProvider, trace: dict
     return [TextBlock(text=result.text), SourceBlock(items=items)]
 
 
-def _dispatch(db: Session, user: User, message: str, provider: LLMProvider, trace: dict) -> list[Block]:
+def _dispatch(
+    db: Session, user: User, message: str, provider: LLMProvider, trace: dict, history: list[dict] | None
+) -> list[Block]:
     try:
-        intent = provider.parse(user, message)
+        intent = provider.parse(user, message, history)
     except Exception as e:  # noqa: BLE001
         trace.update(intent="error", source="error", model="", note=str(e)[:200])
         return [ErrorBlock(text="Не получилось обработать запрос. Попробуй ещё раз или переформулируй.")]
@@ -114,6 +120,6 @@ def _dispatch(db: Session, user: User, message: str, provider: LLMProvider, trac
         return [TextBlock(text="Прогресс стажёров:\n" + "\n".join(lines))]
 
     if intent.name == "faq":
-        return _answer_from_kb(user, message, provider, trace)
+        return _answer_from_kb(user, message, provider, trace, history)
 
     return [TextBlock(text=HELP)]

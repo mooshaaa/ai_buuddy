@@ -49,6 +49,16 @@ class ChatResponse(BaseModel):
     debug: Optional[dict] = None  # заполняется только при DEBUG=1
 
 
+class HistoryMessage(BaseModel):
+    id: int
+    role: Literal["user", "bot"]
+    blocks: list[Block]
+
+
+class HistoryResponse(BaseModel):
+    messages: list[HistoryMessage]
+
+
 class UserOut(BaseModel):
     id: str
     name: str

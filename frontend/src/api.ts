@@ -1,4 +1,4 @@
-import type { ActionCardBlock, Block, DebugEvent, DebugInfo, Health, StagesResponse, User } from './types'
+import type { ActionCardBlock, Block, DebugEvent, DebugInfo, Health, HistoryMessage, StagesResponse, User } from './types'
 
 async function request<T>(url: string, init?: RequestInit): Promise<T> {
   const res = await fetch(url, {
@@ -22,6 +22,9 @@ const post = (body: unknown): RequestInit => ({ method: 'POST', body: JSON.strin
 export const api = {
   users: () => request<User[]>('/api/users'),
   health: () => request<Health>('/health'),
+  history: (user_id: string) =>
+    request<{ messages: HistoryMessage[] }>(`/api/history?user_id=${encodeURIComponent(user_id)}`).then((r) => r.messages),
+  resetHistory: (user_id: string) => request<{ status: string }>('/api/history/reset', post({ user_id })),
   debugEvents: () => request<DebugEvent[]>('/api/debug/events'),
   chat: (user_id: string, message: string) =>
     request<{ blocks: Block[]; debug: DebugInfo | null }>('/api/chat', post({ user_id, message })),

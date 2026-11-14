@@ -56,3 +56,16 @@ class Absence(Base):
     date: Mapped[str] = mapped_column(String(10))
     kind: Mapped[str] = mapped_column(String(30))
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+
+class Message(Base):
+    """История диалога. archived=True после «Новый диалог»: в контекст и интерфейс не попадает, но остаётся для метрик."""
+
+    __tablename__ = "messages"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    user_id: Mapped[str] = mapped_column(ForeignKey("users.id"), index=True)
+    role: Mapped[str] = mapped_column(String(10))  # user | assistant
+    text: Mapped[str] = mapped_column(Text, default="")  # текстовое представление для модели
+    blocks: Mapped[list] = mapped_column(JSON, default=list)  # блоки для показа в интерфейсе
+    archived: Mapped[bool] = mapped_column(Boolean, default=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)

@@ -36,6 +36,7 @@ export interface DebugInfo {
   kb_sources?: string[]
   answer_source?: string
   answer_model?: string
+  history_len?: number
 }
 
 export interface DebugEvent extends DebugInfo {
@@ -55,6 +56,12 @@ export interface Message {
   from: 'user' | 'bot'
   blocks: Block[]
   debug?: DebugInfo | null
+}
+
+export interface HistoryMessage {
+  id: number
+  role: 'user' | 'bot'
+  blocks: Block[]
 }
 
 export interface Stage {

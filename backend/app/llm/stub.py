@@ -43,8 +43,22 @@ def _build(today: date, month: int, day: int) -> date | None:
     return d if d >= today else date(today.year + 1, month, day)
 
 
+def _date_followup(message: str, history: list[dict] | None) -> Intent | None:
+    """Бот спросил дату для отгула, пользователь ответил только датой («20 ноября»)."""
+    if not history:
+        return None
+    last_bot = next((t["text"] for t in reversed(history) if t["role"] == "assistant"), "")
+    if not last_bot.startswith("На какую дату"):
+        return None
+    d = parse_date(message)
+    if d is None:
+        return None
+    vacation = any("отпуск" in t["text"].lower() for t in history if t["role"] == "user")
+    return Intent("create_absence", {"date": d.isoformat(), "kind": "vacation" if vacation else "day_off"})
+
+
 class StubProvider:
-    def parse(self, user: User, message: str) -> Intent:
+    def parse(self, user: User, message: str, history: list[dict] | None = None) -> Intent:
         low = message.lower()
         if any(w in low for w in ("отгул", "выходн", "отпуск")):
             kind = "vacation" if "отпуск" in low else "day_off"
@@ -54,11 +68,16 @@ class StubProvider:
             return Intent("team_progress")
         if any(w in low for w in ("этап", "что делать", "что мне делать", "план", "следующий шаг")):
             return Intent("show_stages")
+        followup = _date_followup(message, history)
+        if followup:
+            return followup
         if kb.search(message, kb.ENTRIES):
             return Intent("faq")
         return Intent("unknown")
 
-    def answer(self, user: User, question: str, entries: list[Entry]) -> KbResult:
+    def answer(
+        self, user: User, question: str, entries: list[Entry], history: list[dict] | None = None
+    ) -> KbResult:
         hit = kb.search(question, entries)
         if not hit:
             return KbResult(found=False)

@@ -23,12 +23,42 @@ export default function Chat({ user, onChange }: { user: User; onChange: () => v
   const [messages, setMessages] = useState<Message[]>([])
   const [text, setText] = useState('')
   const [busy, setBusy] = useState(false)
+  const [loaded, setLoaded] = useState(false)
   const nextId = useRef(1)
   const endRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ block: 'end' })
   }, [messages, busy])
+
+  // после перезагрузки страницы подтягиваем сохранённый диалог
+  useEffect(() => {
+    let cancelled = false
+    api
+      .history(user.id)
+      .then((items) => {
+        if (cancelled) return
+        setMessages(items.map((m) => ({ id: m.id, from: m.role, blocks: m.blocks })))
+        nextId.current = Math.max(0, ...items.map((m) => m.id)) + 1
+      })
+      .catch(() => undefined)
+      .finally(() => !cancelled && setLoaded(true))
+    return () => {
+      cancelled = true
+    }
+  }, [user.id])
+
+  async function newDialog() {
+    try {
+      await api.resetHistory(user.id)
+      setMessages([])
+    } catch {
+      setMessages((m) => [
+        ...m,
+        { id: nextId.current++, from: 'bot', blocks: [{ type: 'error', text: 'Не удалось начать новый диалог. Попробуй ещё раз.' }] },
+      ])
+    }
+  }
 
   async function send(raw: string) {
     const message = raw.trim()
@@ -51,8 +81,14 @@ export default function Chat({ user, onChange }: { user: User; onChange: () => v
 
   return (
     <section className="chat" aria-label="Чат с помощником">
+      <div className="chat-head">
+        <span>Диалог</span>
+        <button className="link-btn" onClick={newDialog} disabled={busy || messages.length === 0}>
+          Новый диалог
+        </button>
+      </div>
       <div className="chat-scroll">
-        {messages.length === 0 && (
+        {loaded && messages.length === 0 && (
           <div className="empty">
             <h2>Привет, {user.name.split(' ')[0]}</h2>
             <p>Спроси про адаптацию или попроси оформить отгул.</p>

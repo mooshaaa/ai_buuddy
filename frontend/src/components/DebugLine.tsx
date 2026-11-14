@@ -8,6 +8,7 @@ export default function DebugLine({ info }: { info: DebugInfo }) {
     <p className={`debug-line debug-${info.source}${fellBack ? ' debug-fallback' : ''}`} title={info.note || undefined}>
       <span className="dot" aria-hidden="true" />
       {label} · {info.intent} · {info.latency_ms} мс
+      {info.history_len !== undefined && <span> · контекст: {info.history_len}</span>}
       {info.intent === 'faq' && (
         <span>
           {' · база: '}

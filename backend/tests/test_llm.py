@@ -120,7 +120,7 @@ def test_extract_json_errors():
 
 def test_fallback_provider_uses_stub_on_failure():
     class Broken:
-        def parse(self, user, message):
+        def parse(self, user, message, history=None):
             raise RuntimeError("down")
 
     fb = FallbackProvider(Broken(), StubProvider()).parse(USER, "Что мне делать дальше?")
@@ -128,7 +128,7 @@ def test_fallback_provider_uses_stub_on_failure():
     ok = Intent("faq", text="x")
 
     class Good:
-        def parse(self, user, message):
+        def parse(self, user, message, history=None):
             return ok
 
     assert FallbackProvider(Good(), StubProvider()).parse(USER, "привет") is ok
@@ -168,3 +168,29 @@ def test_prompt_contains_weekday_calendar():
 def test_weekday_recovered_when_model_gives_no_date():
     p = make(lambda r: reply('{"intent": "create_absence", "params": {"date": null}}'))
     assert p.parse(USER, "Мне нужен выходной в понедельник").params["date"] == "2026-11-16"
+
+
+def test_history_goes_into_prompt_as_data():
+    seen = {}
+
+    def handler(request):
+        seen["user"] = json.loads(request.content)["messages"][1]["content"]
+        return reply('{"intent": "create_absence", "params": {"date": "2026-11-25", "kind": "day_off"}}')
+
+    history = [{"role": "user", "text": "хочу отгул"},
+               {"role": "assistant", "text": "На какую дату оформить отгул?"}]
+    make(handler).parse(USER, "а на 25-е?", history)
+    assert "ИСТОРИЯ ДИАЛОГА" in seen["user"]
+    assert "Пользователь: хочу отгул" in seen["user"] and "Помощник: На какую дату" in seen["user"]
+    assert seen["user"].endswith("НОВОЕ СООБЩЕНИЕ ПОЛЬЗОВАТЕЛЯ: а на 25-е?")
+
+
+def test_no_history_keeps_plain_message():
+    seen = {}
+
+    def handler(request):
+        seen["user"] = json.loads(request.content)["messages"][1]["content"]
+        return reply('{"intent": "unknown", "params": {}}')
+
+    make(handler).parse(USER, "привет", [])
+    assert seen["user"] == "привет"

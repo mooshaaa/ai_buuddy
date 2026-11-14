@@ -134,3 +134,8 @@ button, input, select { font: inherit; color: inherit; }
 .source-chip span { color: var(--muted); }
 .source-demo { border-left-color: #d98a00; background: #fff5df; }
 .demo-tag { margin-left: 8px; font-style: normal; font-size: 11px; font-weight: 600; color: #9a6200; border: 1px solid #e3b25a; border-radius: 999px; padding: 0 7px; }
+
+.chat-head { display: flex; justify-content: space-between; align-items: center; padding: 10px 20px; border-bottom: 1px solid var(--line); font-weight: 600; color: var(--muted); font-size: 14px; }
+.link-btn { background: none; border: none; color: var(--blue); cursor: pointer; font-weight: 600; padding: 4px 0; }
+.link-btn:hover:not(:disabled) { text-decoration: underline; }
+.link-btn:disabled { color: var(--muted); opacity: 0.6; cursor: not-allowed; }

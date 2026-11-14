@@ -135,10 +135,10 @@ class FakeProvider:
     def __init__(self, result=None, error=None):
         self.result, self.error = result, error
 
-    def parse(self, user, message):
+    def parse(self, user, message, history=None):
         return Intent("faq")
 
-    def answer(self, user, question, entries):
+    def answer(self, user, question, entries, history=None):
         if self.error:
             raise self.error
         return self.result
