@@ -102,10 +102,9 @@ def test_absence_without_date_stays_none():
     assert p.parse(USER, "хочу отгул").params["date"] is None
 
 
-def test_faq_uses_knowledge_base():
+def test_faq_intent_passes_through():
     p = make(lambda r: reply('{"intent": "faq", "params": {}}'))
-    assert "Confluence" in p.parse(USER, "Как получить доступ к Jira?").text
-    assert p.parse(USER, "расскажи анекдот").name == "unknown"
+    assert p.parse(USER, "Как получить доступ к Jira?").name == "faq"
 
 
 def test_empty_choices_is_error():

@@ -69,8 +69,21 @@ def test_stage_summary_in_chat(client):
     assert "Следующий шаг" in blocks[0]["text"]
 
 
-def test_faq_and_help(client):
-    assert "Confluence" in chat(client, "intern_1", "Как получить доступы?")[0]["text"]
+def test_faq_returns_answer_with_source(client):
+    blocks = chat(client, "intern_1", "Как подготовиться к экваторной встрече?")
+    assert blocks[0]["type"] == "text" and "презентац" in blocks[0]["text"].lower()
+    assert blocks[1]["type"] == "source"
+    assert blocks[1]["items"][0]["id"] == "kb-equator-prep"
+    assert blocks[1]["items"][0]["synthetic"] is False
+
+
+def test_faq_demo_entry_is_marked_synthetic(client):
+    blocks = chat(client, "intern_1", "Как запросить доступы?")
+    assert blocks[1]["type"] == "source"
+    assert any(i["synthetic"] for i in blocks[1]["items"]) or "доступ" in blocks[0]["text"].lower()
+
+
+def test_help_for_unknown(client):
     assert "Я помогаю" in chat(client, "intern_1", "абракадабра")[0]["text"]
 
 

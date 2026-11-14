@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { api } from '../api'
-import type { ActionCardBlock, Block, User } from '../types'
+import type { ActionCardBlock, Block, SourceItem, User } from '../types'
 
 const KIND: Record<string, string> = { day_off: 'Отгул', vacation: 'Отпуск' }
 
@@ -63,6 +63,23 @@ function ActionCard({
   )
 }
 
+function Sources({ items }: { items: SourceItem[] }) {
+  return (
+    <div className="sources" aria-label="Источники ответа">
+      <span className="sources-label">{items.length > 1 ? 'Источники' : 'Источник'}</span>
+      {items.map((s) => (
+        <div key={s.id} className={`source-chip${s.synthetic ? ' source-demo' : ''}`}>
+          <strong>{s.title}</strong>
+          <span>
+            {s.source}
+            {s.synthetic && <em className="demo-tag">демо</em>}
+          </span>
+        </div>
+      ))}
+    </div>
+  )
+}
+
 export default function Blocks({
   blocks,
   user,
@@ -77,6 +94,7 @@ export default function Blocks({
       {blocks.map((b, i) => {
         if (b.type === 'text') return <p key={i} className="bubble">{b.text}</p>
         if (b.type === 'error') return <p key={i} className="bubble bubble-error" role="alert">{b.text}</p>
+        if (b.type === 'source') return <Sources key={i} items={b.items} />
         return <ActionCard key={i} block={b} user={user} onUpdate={(nb) => onUpdate(i, nb)} />
       })}
     </>

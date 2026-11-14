@@ -8,6 +8,13 @@ export default function DebugLine({ info }: { info: DebugInfo }) {
     <p className={`debug-line debug-${info.source}${fellBack ? ' debug-fallback' : ''}`} title={info.note || undefined}>
       <span className="dot" aria-hidden="true" />
       {label} · {info.intent} · {info.latency_ms} мс
+      {info.intent === 'faq' && (
+        <span>
+          {' · база: '}
+          {info.kb_found ? (info.kb_sources ?? []).join(', ') : 'ответа нет'}
+          {info.answer_source === 'llm' ? ` (${info.answer_model})` : info.kb_found ? ' (правила)' : ''}
+        </span>
+      )}
       {fellBack && <span className="debug-note"> · {info.note}</span>}
     </p>
   )

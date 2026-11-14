@@ -51,9 +51,9 @@ def chat(body: ChatRequest, db: Session = Depends(get_db)):
     user = _user(db, body.user_id)
     trace: dict = {}
     blocks = agent.handle_message(db, user, body.message, get_provider(), trace)
-    log.info("chat user=%s intent=%s source=%s model=%s ms=%s note=%s%s",
+    log.info("chat user=%s intent=%s source=%s model=%s ms=%s note=%s kb=%s%s",
              user.id, trace.get("intent"), trace.get("source"), trace.get("model") or "-",
-             trace.get("latency_ms"), trace.get("note") or "-",
+             trace.get("latency_ms"), trace.get("note") or "-", trace.get("kb_sources") or "-",
              f" msg={body.message[:80]!r}" if settings.debug else "")
     debuglog.record({"ts": datetime.now().isoformat(timespec="seconds"), "user": user.id,
                      "message": body.message[:200], **trace})

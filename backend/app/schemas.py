@@ -24,7 +24,19 @@ class ActionCardBlock(BaseModel):
     result: Optional[dict] = None
 
 
-Block = Annotated[Union[TextBlock, ErrorBlock, ActionCardBlock], Field(discriminator="type")]
+class SourceItem(BaseModel):
+    id: str
+    title: str
+    source: str
+    synthetic: bool = False
+
+
+class SourceBlock(BaseModel):
+    type: Literal["source"] = "source"
+    items: list[SourceItem]
+
+
+Block = Annotated[Union[TextBlock, ErrorBlock, ActionCardBlock, SourceBlock], Field(discriminator="type")]
 
 
 class ChatRequest(BaseModel):

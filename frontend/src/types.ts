@@ -17,7 +17,14 @@ export interface ActionCardBlock {
   status: 'needs_confirmation' | 'done' | 'rejected'
   result: Record<string, unknown> | null
 }
-export type Block = TextBlock | ErrorBlock | ActionCardBlock
+export interface SourceItem {
+  id: string
+  title: string
+  source: string
+  synthetic: boolean
+}
+export interface SourceBlock { type: 'source'; items: SourceItem[] }
+export type Block = TextBlock | ErrorBlock | ActionCardBlock | SourceBlock
 
 export interface DebugInfo {
   intent: string
@@ -25,6 +32,10 @@ export interface DebugInfo {
   model: string
   note: string
   latency_ms: number
+  kb_found?: boolean
+  kb_sources?: string[]
+  answer_source?: string
+  answer_model?: string
 }
 
 export interface DebugEvent extends DebugInfo {

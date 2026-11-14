@@ -3,18 +3,25 @@ import time
 
 from sqlalchemy.orm import Session
 
-from . import tools
+from . import kb, tools
 from .llm.base import LLMProvider
 from .models import Action, Stage, StageProgress, User
 from .policy import PermissionDenied, is_allowed
-from .schemas import ActionCardBlock, Block, ErrorBlock, TextBlock
+from .schemas import ActionCardBlock, Block, ErrorBlock, SourceBlock, SourceItem, TextBlock
 
 ACTION_TITLES = {"create_absence": "Заявка на отгул"}
 
 HELP = (
     "Я помогаю с адаптацией. Могу оформить отгул, показать твои этапы и ответить на вопросы "
-    "про доступы, 1:1, экватор и защиту данных. Например: «Хочу отгул 20 ноября»."
+    "по чек-листу: про доступы, 1:1, экватор, защиту данных. Например: «Хочу отгул 20 ноября»."
 )
+
+NOT_FOUND = {
+    "intern": "В базе знаний я не нашёл ответа на этот вопрос и не буду гадать. "
+              "Лучше спросить у наставника (бадди) или у куратора стажировки.",
+    "mentor": "В базе знаний я не нашёл ответа на этот вопрос и не буду гадать. "
+              "Лучше уточнить у куратора стажировки.",
+}
 
 
 def to_card(action: Action) -> ActionCardBlock:
@@ -47,17 +54,40 @@ def stage_summary(db: Session, user: User) -> str:
 def handle_message(
     db: Session, user: User, message: str, provider: LLMProvider, trace: dict | None = None
 ) -> list[Block]:
+    trace = trace if trace is not None else {}
     start = time.perf_counter()
+    blocks = _dispatch(db, user, message, provider, trace)
+    trace["latency_ms"] = round((time.perf_counter() - start) * 1000)
+    return blocks
+
+
+def _answer_from_kb(user: User, message: str, provider: LLMProvider, trace: dict) -> list[Block]:
+    try:
+        result = provider.answer(user, message, kb.for_role(user.role))
+    except Exception as e:  # noqa: BLE001
+        trace.update(kb_found=False, note=str(e)[:200])
+        return [ErrorBlock(text="Не получилось найти ответ. Попробуй ещё раз или переформулируй вопрос.")]
+    trace.update(kb_found=result.found, kb_sources=result.source_ids, answer_source=result.source,
+                 answer_model=result.model)
+    if result.note:
+        trace["note"] = result.note
+    if not result.found:
+        return [TextBlock(text=NOT_FOUND.get(user.role, NOT_FOUND["intern"]))]
+    items = []
+    for sid in result.source_ids:
+        entry = kb.get(sid)
+        if entry:
+            items.append(SourceItem(id=entry.id, title=entry.title, source=entry.source, synthetic=entry.synthetic))
+    return [TextBlock(text=result.text), SourceBlock(items=items)]
+
+
+def _dispatch(db: Session, user: User, message: str, provider: LLMProvider, trace: dict) -> list[Block]:
     try:
         intent = provider.parse(user, message)
-    except Exception as e:
-        if trace is not None:
-            trace.update(intent="error", source="error", model="", note=str(e)[:200],
-                         latency_ms=round((time.perf_counter() - start) * 1000))
+    except Exception as e:  # noqa: BLE001
+        trace.update(intent="error", source="error", model="", note=str(e)[:200])
         return [ErrorBlock(text="Не получилось обработать запрос. Попробуй ещё раз или переформулируй.")]
-    if trace is not None:
-        trace.update(intent=intent.name, source=intent.source, model=intent.model, note=intent.note,
-                     latency_ms=round((time.perf_counter() - start) * 1000))
+    trace.update(intent=intent.name, source=intent.source, model=intent.model, note=intent.note)
 
     if intent.name == "create_absence":
         if not is_allowed(user.role, "create_absence"):
@@ -84,6 +114,6 @@ def handle_message(
         return [TextBlock(text="Прогресс стажёров:\n" + "\n".join(lines))]
 
     if intent.name == "faq":
-        return [TextBlock(text=intent.text)]
+        return _answer_from_kb(user, message, provider, trace)
 
     return [TextBlock(text=HELP)]

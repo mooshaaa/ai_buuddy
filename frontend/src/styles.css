@@ -127,3 +127,10 @@ button, input, select { font: inherit; color: inherit; }
 .debug-log table { width: 100%; border-collapse: collapse; font-size: 12px; }
 .debug-log th, .debug-log td { text-align: left; padding: 4px 8px; border-bottom: 1px solid var(--line); white-space: nowrap; }
 .debug-log td:nth-child(2), .debug-log td:nth-child(6) { white-space: normal; min-width: 160px; }
+
+.sources { display: flex; flex-direction: column; gap: 6px; padding: 2px 0 0 2px; }
+.sources-label { font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
+.source-chip { display: flex; flex-direction: column; border-left: 3px solid var(--blue); background: var(--blue-soft); border-radius: 8px; padding: 6px 10px; font-size: 13px; line-height: 1.35; }
+.source-chip span { color: var(--muted); }
+.source-demo { border-left-color: #d98a00; background: #fff5df; }
+.demo-tag { margin-left: 8px; font-style: normal; font-size: 11px; font-weight: 600; color: #9a6200; border: 1px solid #e3b25a; border-radius: 999px; padding: 0 7px; }

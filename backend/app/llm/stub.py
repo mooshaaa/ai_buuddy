@@ -4,7 +4,8 @@ from datetime import date, timedelta
 
 from .. import kb
 from ..models import User
-from .base import Intent
+from ..kb import Entry
+from .base import Intent, KbResult
 
 MONTH_STEMS = ["январ", "феврал", "март", "апрел", "ма", "июн", "июл", "август", "сентябр", "октябр", "ноябр", "декабр"]
 WEEKDAY_STEMS = ["понедельник", "вторник", "сред", "четверг", "пятниц", "суббот", "воскресень"]
@@ -53,7 +54,12 @@ class StubProvider:
             return Intent("team_progress")
         if any(w in low for w in ("этап", "что делать", "что мне делать", "план", "следующий шаг")):
             return Intent("show_stages")
-        answer = kb.lookup(message)
-        if answer:
-            return Intent("faq", text=answer)
+        if kb.search(message, kb.ENTRIES):
+            return Intent("faq")
         return Intent("unknown")
+
+    def answer(self, user: User, question: str, entries: list[Entry]) -> KbResult:
+        hit = kb.search(question, entries)
+        if not hit:
+            return KbResult(found=False)
+        return KbResult(found=True, text=hit.text, source_ids=[hit.id])
