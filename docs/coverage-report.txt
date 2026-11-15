@@ -1,0 +1,43 @@
+============================= test session starts =============================
+platform win32 -- Python 3.11.2, pytest-9.2.0, pluggy-1.7.0
+rootdir: C:\\Users\\\u041c\u0430\u0448\u0435\u043d\u044c\u043a\u0430\\Downloads\\ai-buddy\\backend
+plugins: anyio-4.16.0, cov-7.1.0
+collected 63 items
+
+tests\test_api.py ...............                                        [ 23%]
+tests\test_debug.py ..                                                   [ 26%]
+tests\test_history.py .............                                      [ 47%]
+tests\test_kb.py ................                                        [ 73%]
+tests\test_llm.py .................                                      [100%]
+
+============================== warnings summary ===============================
+.venv\Lib\site-packages\fastapi\testclient.py:1
+  C:\\Users\\\u041c\u0430\u0448\u0435\u043d\u044c\u043a\u0430\\Downloads\\ai-buddy\\backend\\.venv\\Lib\\site-packages\\fastapi\\testclient.py:1: StarletteDeprecationWarning: Using `httpx` with `starlette.testclient` is deprecated; install `httpx2` instead.\n    from starlette.testclient import TestClient as TestClient  # noqa
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=============================== tests coverage ================================
+_______________ coverage: platform win32, python 3.11.2-final-0 _______________
+
+Name                       Stmts   Miss  Cover   Missing
+--------------------------------------------------------
+app\__init__.py                0      0   100%
+app\agent.py                  72      6    92%   50, 77, 93-95, 100
+app\config.py                 13      0   100%
+app\db.py                     17      0   100%
+app\debuglog.py                8      0   100%
+app\history.py                30      0   100%
+app\kb.py                     37      0   100%
+app\llm\__init__.py           23      1    96%   40
+app\llm\base.py               21      0   100%
+app\llm\fallback.py           25      0   100%
+app\llm\openai_compat.py     106      2    98%   100-101
+app\llm\stub.py               69      4    94%   19, 41-42, 55
+app\main.py                  107      7    93%   114, 123, 133, 137-140
+app\models.py                 48      0   100%
+app\policy.py                  8      0   100%
+app\schemas.py                53      0   100%
+app\seed.py                   22      0   100%
+app\tools.py                  27      3    89%   16-17, 20
+--------------------------------------------------------
+TOTAL                        686     23    97%
+======================== 63 passed, 1 warning in 7.34s ========================
