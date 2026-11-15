@@ -8,7 +8,7 @@ AI-buddy помогает стажёру пройти адаптацию: отв
 Все данные синтетические. Демо-регламенты в базе знаний помечены «демо».
 
 - Видео-демонстрация: [AI-buddy_video.mp4](AI-buddy_video.mp4)
-- Презентация (PDF): [AI-buddy_presentation.pdf](AI-buddy_presentation.pdf)
+- Презентация (PDF): [AI-buddy_presentation.pdf](ai_buuddy.pdf)
 
 ---
 
