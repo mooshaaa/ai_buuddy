@@ -202,6 +202,7 @@ pytest --cov=app --cov-report=term-missing
 
 Результат на момент сдачи: **63 теста, покрытие 97%**. Тесты не обращаются к внешним сервисам и работают на SQLite.
 Проверка типов и сборки фронтенда: `cd frontend && npm ci && npm run build`.
+Полный отчёт о покрытии: [docs/coverage-report.txt](docs/coverage-report.txt).
 
 ---
 
